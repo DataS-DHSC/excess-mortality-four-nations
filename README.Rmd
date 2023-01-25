@@ -108,7 +108,12 @@ monthly_pops_checks <- check_monthly_populations(pops)
 
 
 # Convert the monthly to weekly populations
-
+baseline_weekly_pops <- weekly_denominators(
+  pops,
+  from_date = as.Date("2015-01-03"),
+  to_date = as.Date("2019-12-27"),
+  holidays = holidays
+)
 
 # Check the weekly populations
 
