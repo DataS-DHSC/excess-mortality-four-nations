@@ -9,10 +9,12 @@ Description: Using inputs of registered deaths by week, the number of expected
 Imports:
     assertr,
     dplyr,
-    lubridate
+    lubridate,
+    purrr,
+    rlang,
+    tidyr
 Suggests:
     knitr,
-    purrr,
     rmarkdown,
     rvest,
     stringr,

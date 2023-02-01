@@ -10,7 +10,6 @@
 #'
 #' @import dplyr
 #' @import lubridate
-#' @export
 #'
 #' @examples
 #' df <- create_dummy_populations() |>
@@ -103,7 +102,7 @@ convert_annual_to_monthly_populations <- function(denominators,
 #'
 #' @import dplyr
 #' @importFrom lubridate floor_date
-#' @export
+#' @importFrom rlang .data
 weekly_denominators <- function(denominators, from_date, to_date,
                                 holidays) {
 
@@ -125,26 +124,66 @@ weekly_denominators <- function(denominators, from_date, to_date,
     date = all_dates,
     month = floor_date(date,
                        unit = "month")
-  ) %>%
+  ) |>
     inner_join(
       denominators,
       by = "month"
-    ) %>%
+    ) |>
     remove_we_bh_denominators(
-      denominator_field = denominator,
-      date_field = date,
-      holidays = holidays) %>%
+      holidays = holidays) |>
     mutate(
       date = round_to_friday(
-        dt = date,
+        dt = .data$date,
         direction = "up"
       )
-    ) %>%
-    group_by(across(!c(month, denominator))) %>%
+    ) |>
+    rename(week_ending = date) |>
+    group_by(across(!c("month", "denominator"))) |>
     summarise(
-      denominator = sum(denominator),
+      denominator = sum(.data$denominator),
       .groups = "drop"
     )
 
   return(weekly_denominators)
+}
+
+#' Convert population mid-year estimates into weekly estimates by population
+#' subgroups, accounting for lower populations in weeks containing bank holidays
+#'
+#' @param denominators table that contains areacode, deprivation_quintile, sex,
+#'   age_group, period, population
+#' @param from_date date; earliest date in the period of concern
+#' @param to_date date; latest date in the period of concern
+#' @param holidays date; a vector of dates which correspond to bank holidays in
+#'   the period
+#'
+#' @return tibble containing all the same input data and also week_ending
+#'
+#' @export
+#'
+#' @examples
+#' df <- create_dummy_populations() |>
+#'  convert_annual_to_weekly_populations(
+#'    from_date = as.Date("2015-01-03"),
+#'    to_date = as.Date("2019-12-27"),
+#'    holidays = as.Date("2017-12-25"))
+convert_annual_to_weekly_populations <- function(denominators,
+                                                 from_date, to_date,
+                                                 holidays) {
+  start_year <- lubridate::year(from_date)
+  end_year <- lubridate::year(to_date)
+
+  pops <- convert_annual_to_monthly_populations(
+    denominators,
+    start_year = start_year,
+    end_year = end_year)
+
+  baseline_weekly_pops <- weekly_denominators(
+    denominators = pops,
+    from_date = from_date,
+    to_date = to_date,
+    holidays = holidays
+  )
+
+  return(baseline_weekly_pops)
 }

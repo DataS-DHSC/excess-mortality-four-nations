@@ -7,15 +7,10 @@ baseline death period, deaths were very unlikely to be registered on
 weekends or bank holidays therefore these days should have consistent
 predictions with working days}
 \usage{
-remove_we_bh_denominators(data, denominator_field, date_field, holidays)
+remove_we_bh_denominators(data, holidays)
 }
 \arguments{
 \item{data}{tibble of data where one field contains the denominator}
-
-\item{denominator_field}{unquoted field name of the field containing the
-denominator}
-
-\item{date_field}{unquoted field name of the field containing the date}
 
 \item{holidays}{vector of dates which are bank holidays}
 }
