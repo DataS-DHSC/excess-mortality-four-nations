@@ -187,29 +187,14 @@ sat_to_mon_xmas <- function(data) {
 add_easter_binary_variables <- function(data, easter_fridays) {
   data  <- data |>
     mutate(
-      WedpreE = case_when(
-        date %in% (easter_fridays - 2) ~ 1L,
-        TRUE ~ 0L),
       ThurpreE = case_when(
         date %in% (easter_fridays - 1) ~ 1L,
         TRUE ~ 0L),
       TuespostE = case_when(
         date %in% (easter_fridays + 4) ~ 1L,
         TRUE ~ 0L),
-      WedpostE = case_when(
-        date %in% (easter_fridays + 5) ~ 1L,
-        TRUE ~ 0L),
-      ThurpostE = case_when(
-        date %in% (easter_fridays + 6) ~ 1L,
-        TRUE ~ 0L),
-      FripostE = case_when(
-        date %in% (easter_fridays + 7) ~ 1L,
-        TRUE ~ 0L),
       MonpostE1 = case_when(
         date %in% (easter_fridays + 10) ~ 1L,
-        TRUE ~ 0L),
-      TuespostE1 = case_when(
-        date %in% (easter_fridays + 11) ~ 1L,
         TRUE ~ 0L))
   return(data)
 }
@@ -222,7 +207,12 @@ add_easter_binary_variables <- function(data, easter_fridays) {
 #' @param data table with a "date" field in it
 #' @param holidays date; vector of bank holidays in the period
 #' @import dplyr
+#' @importFrom lubridate wday month
 add_bh_binary_variables <- function(data, holidays) {
+
+  # check on holiday inputs
+  check_holiday_dates(holidays)
+
   easter_fridays <- calc_easter_fridays(holidays)
 
   non_easter_holidays <- holidays[!(holidays %in% c(easter_fridays, (easter_fridays + 3)))]
@@ -257,6 +247,9 @@ add_bh_binary_variables <- function(data, holidays) {
 #' @import dplyr
 #'
 consecutive_bank_hols <- function(data, holidays) {
+  # check on holiday inputs
+  check_holiday_dates(holidays)
+
   date_range <- data %>%
     pull("date") %>%
     range()

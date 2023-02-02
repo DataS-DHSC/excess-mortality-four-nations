@@ -226,7 +226,7 @@ test_that("sat_to_mon_xmas works as expected", {
   expect_equal(
     test_data |>
       filter(.data$sat_to_mon_xmas == TRUE) |>
-      pull(date),
+      pull("date"),
     christmas_dates,
     info = "the dates where the week containing a Christmas on a Sat/Sun/Mon is identified"
   )
@@ -234,7 +234,7 @@ test_that("sat_to_mon_xmas works as expected", {
   expect_equal(
     test_data |>
       filter(.data$week_after_sat_to_mon_xmas == TRUE) |>
-      pull(date),
+      pull("date"),
     christmas_dates + 7,
     info = "the week following a week containing a Christmas on a Sat/Sun/Mon is identified"
   )
@@ -242,10 +242,40 @@ test_that("sat_to_mon_xmas works as expected", {
   expect_equal(
     test_data |>
       filter(.data$week2_after_sat_to_mon_xmas == TRUE) |>
-      pull(date),
+      pull("date"),
     christmas_dates + 14,
     info = "the second week following a week containing a Christmas on a Sat/Sun/Mon is identified"
   )
+
+})
+
+test_that("consecutive_bank_hols works as expected", {
+  test_data <- tibble(
+    date = seq(
+      from = as.Date("2019-12-01"),
+      to = as.Date("2020-01-31"),
+      by = "days"
+    )
+  )
+
+  pretend_bank_holidays <- as.Date(
+    c("2019-12-02", "2019-12-03",
+      "2019-12-10", "2019-12-11",
+      "2019-12-25", "2019-12-26")
+  )
+
+  expected_dates <- as.Date(c("2019-12-13", "2019-12-27"))
+
+  expect_identical(
+    test_data |>
+      consecutive_bank_hols(
+        pretend_bank_holidays) |>
+      filter(.data$consecutive_bh) |>
+      pull("date"),
+    expected_dates,
+    info = "consecutive bank holidays that don't include a Monday or Friday are identified"
+  )
+
 
 })
 
