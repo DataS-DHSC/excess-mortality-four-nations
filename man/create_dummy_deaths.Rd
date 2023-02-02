@@ -9,7 +9,7 @@ create_dummy_deaths(
   deprivation_quintile = 1:5,
   sex = 0:1,
   age_group = c("0-24", "25-49", "50-64", "65-74", "75-84", "85+"),
-  week_ending = as.Date(c("2015-01-09", "2019-12-27")),
+  date_limits = as.Date(c("2015-01-09", "2019-12-27")),
   incomplete = FALSE
 )
 }
@@ -23,7 +23,7 @@ deprived quintile and 5 is the most deprived quintile)}
 
 \item{age_group}{string; describing the age groups used for modelling}
 
-\item{week_ending}{date with two items; item 1 is the date of the Friday at
+\item{date_limits}{date with two items; item 1 is the date of the Friday at
 the end of the first full week of data in the period, and item 2 is the
 date of the Friday at the end of the last full week of data in the period}
 

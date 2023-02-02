@@ -76,7 +76,7 @@ create_dummy_populations <- function(
 #'   deprived quintile and 5 is the most deprived quintile)
 #' @param sex 0 (male) or 1 (female)
 #' @param age_group string; describing the age groups used for modelling
-#' @param week_ending date with two items; item 1 is the date of the Friday at
+#' @param date_limits date with two items; item 1 is the date of the Friday at
 #'   the end of the first full week of data in the period, and item 2 is the
 #'   date of the Friday at the end of the last full week of data in the period
 #' @param incomplete logical; TRUE will create a tibble with missing records
@@ -102,10 +102,16 @@ create_dummy_deaths <- function(
     deprivation_quintile = 1:5,
     sex = 0:1,
     age_group = c("0-24", "25-49", "50-64", "65-74", "75-84", "85+"),
-    week_ending = as.Date(c("2015-01-09", "2019-12-27")),
+    date_limits = as.Date(c("2015-01-09", "2019-12-27")),
     incomplete = FALSE) {
 
   set.seed(9442)
+
+  date_limits[1] <- round_to_friday(date_limits[1],
+                                    direction = "up")
+  date_limits[2] <- round_to_friday(date_limits[2],
+                                    direction = "down")
+
 
   dummy <- expand.grid(
     list(
@@ -114,8 +120,8 @@ create_dummy_deaths <- function(
       sex = sex,
       age_group = age_group,
       week_ending = seq(
-        from = week_ending[1],
-        to = week_ending[2],
+        from = date_limits[1],
+        to = date_limits[2],
         by = "weeks"
       )
     )) %>%
