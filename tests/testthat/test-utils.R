@@ -408,7 +408,7 @@ test_that("build_prediction_dates works as expected", {
   deprivation_quintiles <- 1:2
   sexs <- 0:1
   age_groups <- c("0-49", "50+")
-  years <- 2023:2026
+  years <- 2023:2027
 
   from_date <- as.Date("2024-01-01")
   to_date <- as.Date("2025-12-31")

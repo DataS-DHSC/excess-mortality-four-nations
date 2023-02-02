@@ -114,10 +114,12 @@ weekly_denominators <- function(denominators, from_date, to_date,
 
   denominator_date_range <- range(denominators$month)
 
-  if (from_date < denominator_date_range[1])
+  if (lubridate::floor_date(from_date,
+                            unit = "month") < denominator_date_range[1])
     stop("denominators provided start after the from_date input")
 
-  if (to_date > denominator_date_range[2])
+  if (lubridate::floor_date(to_date,
+                            unit = "month") > denominator_date_range[2])
     stop("denominators provided finish before the to_date input")
 
   # dates need to start on a Sat
