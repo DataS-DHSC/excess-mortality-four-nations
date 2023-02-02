@@ -279,3 +279,213 @@ test_that("consecutive_bank_hols works as expected", {
 
 })
 
+test_that("create_date_dependent_variables works as expected", {
+  from_date <- as.Date("2022-01-01")
+  to_date <- as.Date("2022-12-31")
+
+  bank_holidays_2022 <- as.Date(
+    c(
+      "2022-01-03",
+      "2022-04-15",
+      "2022-04-18",
+      "2022-05-02",
+      "2022-06-02",
+      "2022-06-03",
+      "2022-08-29",
+      "2022-09-19",
+      "2022-12-26",
+      "2022-12-27"
+    )
+  )
+
+  test_data <- create_date_dependent_variables(
+    from_date = from_date,
+    to_date = to_date,
+    holiday = bank_holidays_2022
+  )
+
+  expect_identical(
+    test_data |>
+      filter(
+        if_any(
+          starts_with("easter"),
+          ~ . == 1
+        )
+      ) |>
+      pull("week_ending"),
+    as.Date(c("2022-04-15", "2022-04-22", "2022-04-29")),
+    info = "easter variables are identified correctly for 2022"
+  )
+
+
+  expect_identical(
+    test_data |>
+      filter(
+        if_any(
+          ends_with("BH",
+                    ignore.case = FALSE),
+          ~ . == 1
+        )
+      ) |>
+      pull("week_ending"),
+    as.Date(c(
+      "2022-04-29",
+      "2022-05-06",
+      "2022-08-26",
+      "2022-09-02",
+      "2022-09-16",
+      "2022-09-23")),
+    info = "bank holiday variables are identified correctly for 2022"
+  )
+
+  expect_identical(
+    test_data |>
+      filter(
+        if_any(
+          ends_with("mon_xmas"),
+          ~ . == 1
+        )
+      ) |>
+      pull("week_ending"),
+    as.Date(c(
+      "2022-12-30")),
+    info = "Monday Christmas variables are identified correctly for 2022"
+  )
+
+  expect_identical(
+    test_data |>
+      filter(
+        if_any(
+          ends_with("thu_xmas"),
+          ~ . == 1
+        )
+      ) |>
+      pull("week_ending"),
+    as.Date(x = integer(0), origin = "1970-01-01"),
+    info = "Tuesday to Thursday Christmas variables are identified correctly for 2022 as none"
+  )
+
+  expect_identical(
+    test_data |>
+      filter(.data$consecutive_bh == 1) |>
+      pull("week_ending"),
+    as.Date("2022-06-03"),
+    info = "consecutive bank holiday variable is identified correctly for 2022"
+  )
+
+  month_sums <- range(colSums(select(test_data, starts_with("month"))))
+
+  expect_gt(
+    month_sums[1],
+    4.15,
+    label = "The lowest sum of month variables over a year is above 4.15"
+  )
+
+  expect_lt(
+    month_sums[2],
+    4.5,
+    label = "The highest sum of month variables over a year is above 4.5"
+  )
+
+  years_from_2016_range <- range(test_data$years_from_20161231)
+
+  expect_gt(
+    years_from_2016_range[1],
+    5,
+    label = "The difference between the closest week in 2022 to the end of 2016 is over 5 years"
+  )
+
+  expect_lt(
+    years_from_2016_range[2],
+    6,
+    label = "The difference between the furthest week in 2022 to the end of 2016 is under 6 years"
+  )
+
+})
+
+test_that("build_prediction_dates works as expected", {
+  areacodes <- letters[1:3]
+  deprivation_quintiles <- 1:2
+  sexs <- 0:1
+  age_groups <- c("0-49", "50+")
+  years <- 2023:2026
+
+  from_date <- as.Date("2024-01-01")
+  to_date <- as.Date("2025-12-31")
+
+  pretend_bank_holidays <- as.Date(
+    c("2024-12-02", "2024-12-03",
+      "2024-12-10", "2024-12-11",
+      "2024-12-25", "2024-12-26",
+      "2025-12-02", "2025-12-03",
+      "2025-12-10", "2025-12-11",
+      "2025-12-25", "2025-12-26")
+  )
+
+
+  dummy_pops <- create_dummy_populations(
+    areacode = areacodes,
+    deprivation_quintile = deprivation_quintiles,
+    sex = sexs,
+    age_group = age_groups,
+    year = years
+  ) |>
+    convert_annual_to_weekly_populations(
+      from_date = from_date,
+      to_date = to_date,
+      holidays = pretend_bank_holidays
+  )
+
+  predictors <- build_prediction_dates(
+    areacode = areacodes,
+    deprivation_quintile = deprivation_quintiles,
+    sex = sexs,
+    age_group = age_groups,
+    from_date = from_date,
+    to_date = to_date,
+    holidays = pretend_bank_holidays,
+    denominators = dummy_pops)
+
+  expect_equal(
+    names(predictors),
+    c("week_ending",
+      "areacode",
+      "sex",
+      "age_group",
+      "deprivation_quintile",
+      "denominator",
+      "easter_pre",
+      "easter_post_1",
+      "easter_post_2",
+      "wk_nearest_BH",
+      "wk_next_nearest_BH",
+      "wk_sat_to_mon_xmas",
+      "wk_post_sat_to_mon_xmas",
+      "wk2_post_sat_to_mon_xmas",
+      "consecutive_bh",
+      "wk_after_tue_to_thu_xmas",
+      "wk2_after_tue_to_thu_xmas",
+      "month1",
+      "month2",
+      "month3",
+      "month4",
+      "month5",
+      "month6",
+      "month7",
+      "month8",
+      "month9",
+      "month10",
+      "month11",
+      "month12",
+      "years_from_20161231"),
+    info = "All expected fields are produced in predictor matrix"
+  )
+
+  expect_equal(
+    sum(is.na(predictors)),
+    0,
+    info = "There are no NA values in the predictor table"
+  )
+
+})
+

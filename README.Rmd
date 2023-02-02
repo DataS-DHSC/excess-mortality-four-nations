@@ -154,28 +154,12 @@ baseline_data <- baseline_complete_deaths |>
 from_date <- as.Date("2015-01-03")
 to_date <- as.Date("2019-12-27")
 
-# variables related to bank holidays
-hol_vars <- weekly_holiday_variables(
-  from_date = from_date,
-  to_date = to_date,
-  holidays = holidays
-)
-  
-# variables relates to mortality trends
-trend_var <- weekly_trend_variable(
-  from_date = from_date,
-  to_date = to_date
-)
-  
-# variables related to times of the year
-seasonal_vars <- weekly_seasonal_variables(
-  from_date = from_date,
-  to_date = to_date
-)  
-  
-date_dependent_variables <- hol_vars %>% 
-  left_join(seasonal_vars, by = "week_ending") %>% 
-  left_join(trend_var, by = "week_ending")  
+# create date-dependent variables
+  date_dependent_variables <- create_date_dependent_variables(
+    from_date = from_date,
+    to_date = to_date,
+    holidays = holidays
+  )
 
 # Add on predictor variables
 baseline_data <- baseline_data |> 

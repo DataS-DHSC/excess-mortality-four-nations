@@ -215,12 +215,36 @@ add_bh_binary_variables <- function(data, holidays) {
 
   easter_fridays <- calc_easter_fridays(holidays)
 
-  non_easter_holidays <- holidays[!(holidays %in% c(easter_fridays, (easter_fridays + 3)))]
+  # remove easter holidays
+  if (length(easter_fridays) > 0) {
+    non_easter_holidays <- holidays[!(holidays %in% c(easter_fridays, (easter_fridays + 3)))]
+  } else {
+    non_easter_holidays <- holidays
+  }
 
-  friday_bhols <- non_easter_holidays[lubridate::wday(non_easter_holidays) == 6 &
-                                        lubridate::month(non_easter_holidays) != 12]
-  monday_bhols <- non_easter_holidays[lubridate::wday(non_easter_holidays) == 2 &
-                                        lubridate::month(non_easter_holidays) != 12]
+
+  # remove christmas and new year holidays
+  non_easter_christmas_holidays <- non_easter_holidays[between(lubridate::yday(non_easter_holidays),
+                                                    4, #4th Jan
+                                                    358)] #24th Dec in most years
+
+  # remove bank holidays on consecutive dates
+  days_since_last_holiday <- c(NA, diff(non_easter_christmas_holidays))
+  days_until_next_holiday <- lead(non_easter_christmas_holidays) - non_easter_christmas_holidays
+
+  min_days <- pmin(
+    days_since_last_holiday,
+    days_until_next_holiday,
+    na.rm = TRUE
+  )
+
+  remaining_days <- non_easter_christmas_holidays[min_days != 1]
+
+
+  friday_bhols <- remaining_days[lubridate::wday(remaining_days) == 6 &
+                                        lubridate::month(remaining_days) != 12]
+  monday_bhols <- remaining_days[lubridate::wday(remaining_days) == 2 &
+                                        lubridate::month(remaining_days) != 12]
 
 
   data  <- data |>
@@ -296,20 +320,9 @@ consecutive_bank_hols <- function(data, holidays) {
 #'
 #' @import dplyr
 #' @importFrom lubridate wday
-#' @export
 weekly_holiday_variables <- function(from_date, to_date, holidays) {
-  # Parameters to make
-  # easter_pre
-  # easter_post_1
-  # easter_post_2
-  # wk_nearest_BH
-  # wk_next_nearest_BH
-  # wk_fri_xmas - this is included in easter_pre
-  # wk_post_fri_xmas - this is included in easter_post_1
-  # wk2_post_fri_xmas - this is included in easter_post_2
-  # wk_sat_to_mon_xmas
-  # wk_post_sat_to_mon_xmas
-  # wk2_post_sat_to_mon_xmas
+  # check on holiday inputs
+  check_holiday_dates(holidays)
 
 
   # dates need to start on a Sat
@@ -379,7 +392,6 @@ weekly_holiday_variables <- function(from_date, to_date, holidays) {
 #' @param from_date date; first date in time period
 #' @param to_date date; last date in time period
 #' @import dplyr
-#' @export
 weekly_trend_variable <- function(from_date, to_date) {
 
   # dates need to start on a Sat
@@ -417,7 +429,6 @@ weekly_trend_variable <- function(from_date, to_date) {
 #' @param to_date date; last date in time period
 #' @import dplyr
 #' @importFrom tidyr pivot_wider
-#' @export
 weekly_seasonal_variables <- function(from_date, to_date) {
   # dates need to start on a Sat
   from_date <- round_up_to_saturday(from_date)
@@ -504,6 +515,42 @@ add_day_weighting <- function(data) {
   return(data)
 }
 
+#' Create table of weekly date dependent variables
+#'
+#' @inheritParams weekly_holiday_variables
+#' @import dplyr
+#' @export
+#'
+#' @examples
+#' vars <- create_date_dependent_variables(
+#'   from_date = as.Date("2020-01-01"),
+#'   to_date = as.Date("2020-12-31"),
+#'   holidays = as.Date(c("2020-01-01", "2020-12-25")))
+create_date_dependent_variables <- function(from_date, to_date, holidays) {
+  hol_vars <- weekly_holiday_variables(
+    from_date = from_date,
+    to_date = to_date,
+    holidays = holidays
+  )
+
+  # variables relates to mortality trends
+  trend_var <- weekly_trend_variable(
+    from_date = from_date,
+    to_date = to_date
+  )
+
+  # variables related to times of the year
+  seasonal_vars <- weekly_seasonal_variables(
+    from_date = from_date,
+    to_date = to_date
+  )
+
+  date_dependent_variables <- hol_vars %>%
+    left_join(seasonal_vars, by = "week_ending") %>%
+    left_join(trend_var, by = "week_ending")
+
+  return(date_dependent_variables)
+}
 
 # functions for predictions -----------------------------------------------
 
@@ -571,26 +618,11 @@ build_prediction_dates <- function(
 
 
   # create date-dependent variables
-  hol_vars <- weekly_holiday_variables(
+  date_dependent_variables <- create_date_dependent_variables(
     from_date = from_date,
     to_date = to_date,
     holidays = holidays
   )
-
-  trend_var <- weekly_trend_variable(
-    from_date = from_date,
-    to_date = to_date
-  )
-
-  seasonal_vars <- weekly_seasonal_variables(
-    from_date = from_date,
-    to_date = to_date
-  )
-
-  date_dependent_variables <- hol_vars |>
-    left_join(seasonal_vars, by = "week_ending") |>
-    left_join(trend_var, by = "week_ending")
-
 
   # make denominators the correct variable types
   denominators <- denominators |>
@@ -607,8 +639,7 @@ build_prediction_dates <- function(
       "week_ending", "areacode", "sex", "age_group", "deprivation_quintile"
     )) |>
     left_join(date_dependent_variables,
-              by = "week_ending") |>
-    mutate(registered_deaths = NA)
+              by = "week_ending")
 
   return(recent_dates)
 }
