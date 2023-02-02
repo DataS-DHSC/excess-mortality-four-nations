@@ -4,10 +4,10 @@
 \alias{calc_easter_fridays}
 \title{calculate Easter Fridays from an input of dates}
 \usage{
-calc_easter_fridays(dates, include_christmas_friday = TRUE)
+calc_easter_fridays(holidays, include_christmas_friday = TRUE)
 }
 \arguments{
-\item{dates}{date; vector of holiday dates}
+\item{holidays}{date; vector of holiday dates}
 
 \item{include_christmas_friday}{logical; whether to treat a Christmas on a
 Friday in the same was as an Easter Friday (because the following Monday is

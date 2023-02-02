@@ -39,22 +39,26 @@ round_to_friday <- function(dt, direction) {
 }
 
 #' @title calculate Easter Fridays from an input of dates
-#' @param dates date; vector of holiday dates
+#' @param holidays date; vector of holiday dates
 #' @param include_christmas_friday logical; whether to treat a Christmas on a
 #'   Friday in the same was as an Easter Friday (because the following Monday is
 #'   also a bank holiday)
 #' @description returns a vector of easter fridays when given a vector of
 #'   holiday dates
 #' @import dplyr
-#' @importFrom lubridate wday month
-calc_easter_fridays <- function(dates, include_christmas_friday = TRUE) {
-  easter_fridays <- dplyr::tibble(holiday_date = dates) |>
+#' @importFrom lubridate wday month year
+calc_easter_fridays <- function(holidays, include_christmas_friday = TRUE) {
+
+  # make checks on holidays input
+  check_holiday_dates(holidays)
+
+  easter_fridays <- dplyr::tibble(holiday_date = holidays) |>
     mutate(
       Day_name = lubridate::wday(.data$holiday_date,
                                  label = TRUE,
                                  abbr = FALSE),
-      easter_friday = .data$holiday_date %in% (dates - 3),
-      easter_monday = .data$holiday_date %in% (dates + 3),
+      easter_friday = .data$holiday_date %in% (holidays - 3),
+      easter_monday = .data$holiday_date %in% (holidays + 3),
       month = lubridate::month(.data$holiday_date),
       easter_weekend = case_when(
         .data$easter_monday | .data$easter_friday ~ TRUE,
@@ -84,13 +88,18 @@ calc_easter_fridays <- function(dates, include_christmas_friday = TRUE) {
 #' @importFrom rlang .data
 #' @import dplyr
 remove_we_bh_denominators <- function(data, holidays) {
+
+  # make checks on holidays input
+  check_holiday_dates(holidays)
+
+
   data <- data |>
     mutate(
       denominator = case_when(
         lubridate::wday(.data$date) %in% c(1, 7) ~ 0,
         .data$date %in% holidays ~ 0,
-      TRUE ~ as.numeric(.data$denominator)
-    ))
+        TRUE ~ as.numeric(.data$denominator)
+      ))
 
   return(data)
 }
@@ -131,6 +140,8 @@ christmas_week <- function(year, day_of_interest) {
   xmas <- as.Date(paste(year, "12", "25",
                         sep = "-"))
   keep_xmas <- xmas[lubridate::wday(xmas) %in% day_of_interest]
+
+  if (length(keep_xmas) == 0) return(as.Date(x = integer(0), origin = "1970-01-01"))
 
   friday_dates <- keep_xmas + (7 - lubridate::wday(keep_xmas, week_start = 6))
 
@@ -657,3 +668,22 @@ add_prediction_intervals <- function(data, dispersion_parameter) {
 }
 
 
+# Input checks ------------------------------------------------------------
+
+#' Check on holiday input dates
+#'
+#' @param holidays date; vector of bank holidays in period
+#' @importFrom lubridate year
+check_holiday_dates <- function(holidays) {
+
+  if (!is.Date(holidays))
+    stop("holidays must have a Date class")
+
+  date_range <- range(holidays)
+  years_in_dates <- lubridate::year(date_range[2]) -
+    lubridate::year(date_range[1]) + 1
+  average_dates_per_year <- length(holidays) / years_in_dates
+  if (!between(average_dates_per_year, 5, 15))
+    warning("The number of holiday dates provided are unusually low or high")
+  return(invisible(average_dates_per_year))
+}
