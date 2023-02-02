@@ -14,6 +14,7 @@ Imports:
     tibble,
     tidyr
 Suggests:
+    covr,
     knitr,
     rmarkdown,
     rvest,
