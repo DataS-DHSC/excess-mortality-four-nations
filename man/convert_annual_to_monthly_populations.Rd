@@ -9,7 +9,7 @@ convert_annual_to_monthly_populations(denominators, start_year, end_year)
 }
 \arguments{
 \item{denominators}{table that contains areacode, deprivation_quintile, sex,
-age_group, period, population}
+age_group, year, population}
 
 \item{start_year}{numeric the start year for your output dataset}
 

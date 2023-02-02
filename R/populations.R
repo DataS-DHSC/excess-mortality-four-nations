@@ -2,7 +2,7 @@
 #' subgroups
 #'
 #' @param denominators table that contains areacode, deprivation_quintile, sex,
-#'   age_group, period, population
+#'   age_group, year, population
 #' @param start_year numeric the start year for your output dataset
 #' @param end_year numeric the end year for your output dataset
 #'
@@ -14,6 +14,16 @@
 convert_annual_to_monthly_populations <- function(denominators,
                                                   start_year,
                                                   end_year) {
+
+
+  if (start_year <= min(denominators$year))
+    stop("the denominators dataset provided must contain an extra year of data prior to the start_year value")
+
+  if (end_year >= max(denominators$year))
+    stop("the denominators dataset provided must contain an extra year of data following to the end_year value")
+
+  if (start_year > end_year)
+    stop("start_year must be less than end_year")
 
   denominators <- denominators |>
     rename(period = "year") |>
@@ -90,10 +100,9 @@ convert_annual_to_monthly_populations <- function(denominators,
 #' a monthly version
 #'
 #' @param denominators tibble; the tibble must contain fields for month,
-#'   denominator, and any other population subgroup category desired (eg, age,
-#'   sex, ethnic group, deprivation quintile)
-#' @param from_date date; earliest date in the period of concern
-#' @param to_date date; latest date in the period of concern
+#'   denominator, age, sex, and deprivation quintile
+#' @param from_date date; earliest date in the period of interest
+#' @param to_date date; latest date in the period of interest
 #' @param holidays date; a vector of dates which correspond to bank holidays in
 #'   the period
 #'
@@ -102,6 +111,14 @@ convert_annual_to_monthly_populations <- function(denominators,
 #' @importFrom rlang .data
 weekly_denominators <- function(denominators, from_date, to_date,
                                 holidays) {
+
+  denominator_date_range <- range(denominators$month)
+
+  if (from_date < denominator_date_range[1])
+    stop("denominators provided start after the from_date input")
+
+  if (to_date > denominator_date_range[2])
+    stop("denominators provided finish before the to_date input")
 
   # dates need to start on a Sat
   from_date <- round_up_to_saturday(from_date)
@@ -137,7 +154,7 @@ weekly_denominators <- function(denominators, from_date, to_date,
     rename(week_ending = date) |>
     group_by(across(!c("month", "denominator"))) |>
     summarise(
-      denominator = sum(.data$denominator),
+      denominator = mean(.data$denominator),
       .groups = "drop"
     )
 

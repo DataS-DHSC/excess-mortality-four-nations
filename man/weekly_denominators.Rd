@@ -10,12 +10,11 @@ weekly_denominators(denominators, from_date, to_date, holidays)
 }
 \arguments{
 \item{denominators}{tibble; the tibble must contain fields for month,
-denominator, and any other population subgroup category desired (eg, age,
-sex, ethnic group, deprivation quintile)}
+denominator, age, sex, and deprivation quintile}
 
-\item{from_date}{date; earliest date in the period of concern}
+\item{from_date}{date; earliest date in the period of interest}
 
-\item{to_date}{date; latest date in the period of concern}
+\item{to_date}{date; latest date in the period of interest}
 
 \item{holidays}{date; a vector of dates which correspond to bank holidays in
 the period}
