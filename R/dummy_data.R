@@ -7,6 +7,7 @@
 #' @param age_group string; describing the age groups used for modelling
 #' @param year numeric; the year the population estimate is for
 #' @importFrom stats rnorm
+#' @importFrom purrr map_dbl
 #' @import dplyr
 #' @return tibble containing areacode, sex, age_group, deprivation_quintile,
 #'   year, population
@@ -29,10 +30,16 @@ create_dummy_populations <- function(
       sex = sex,
       age_group = age_group)) %>%
     mutate(
-      population = stats::rnorm(n = nrow(.), mean = 500, sd = 250),
+      population = purrr::map_dbl(
+        .x = .data$areacode,
+        .f = ~ stats::rnorm(
+          n = length(.x),
+          mean = 500,
+          sd = 250)
+      ),
       population = case_when(
-        population < 0 ~ abs(population),
-        TRUE ~ population
+        .data$population < 0 ~ abs(.data$population),
+        TRUE ~ .data$population
       ))
 
   dummy_populations <- expand.grid(
@@ -46,14 +53,14 @@ create_dummy_populations <- function(
               by = c("areacode", "deprivation_quintile", "sex", "age_group")) |>
     mutate(
       population = purrr::map_dbl(
-        .x = population,
+        .x = .data$population,
         .f = ~ stats::rnorm(
           n = 1,
           mean = .x,
           sd = 5)),
       population = case_when(
-        population < 0 ~ abs(population),
-        TRUE ~ population
+        .data$population < 0 ~ abs(.data$population),
+        TRUE ~ .data$population
       ))
 
   return(dummy_populations)
@@ -77,6 +84,8 @@ create_dummy_populations <- function(
 #'   group/sex/deprivation quintile. FALSE will provide a complete set of
 #'   records for every combination of week, sex, age group and deprivation
 #'   quintile
+#' @importFrom purrr map_dbl
+#' @import dplyr
 #'
 #' @return tibble containing areacode, sex, age_group, deprivation_quintile,
 #'   week_end, registered_deaths
@@ -111,9 +120,12 @@ create_dummy_deaths <- function(
       )
     )) %>%
     mutate(
-      registered_deaths = sample(1:150,
-                                 size = nrow(.),
-                                 replace = TRUE)
+      registered_deaths = purrr::map_dbl(
+        .x = .data$areacode,
+        .f = ~ sample(1:150,
+                      size = length(.x),
+                      replace = TRUE)
+      )
     )
 
   if (incomplete) {

@@ -12,8 +12,7 @@ consecutive_bank_hols(data, holidays)
 \arguments{
 \item{data}{tibble containing a date field}
 
-\item{date_field}{unquoted name of the field in data which corresponds to the
-dates}
+\item{holidays}{date; vector of holiday dates}
 }
 \description{
 applies variables to weeks where there are two consecutive bank holidays,

@@ -9,10 +9,7 @@ add_prediction_intervals(data, dispersion_parameter)
 \arguments{
 \item{data}{data frame containing data}
 
-\item{dispersion_parameter}{dispersion parameter from model}
-
-\item{modelled_field}{unquoted field name of field in data containing the
-expected values}
+\item{dispersion_parameter}{dispersion parameter for the model}
 }
 \description{
 add lower and upper prediction interval fields to data frame

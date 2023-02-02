@@ -22,7 +22,3 @@ tibble containing all the same input data and also month
 Convert population mid-year estimates into monthly estimates by population
 subgroups
 }
-\examples{
-df <- create_dummy_populations() |>
- convert_annual_to_monthly_populations()
-}

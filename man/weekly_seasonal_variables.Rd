@@ -9,7 +9,7 @@ weekly_seasonal_variables(from_date, to_date)
 \arguments{
 \item{from_date}{date; first date in time period}
 
-\item{end_date}{date; last date in time period}
+\item{to_date}{date; last date in time period}
 }
 \description{
 creates table of month variables (ie, seasonal) aggregated to week

@@ -48,7 +48,7 @@ round_to_friday <- function(dt, direction) {
 #' @import dplyr
 #' @importFrom lubridate wday month
 calc_easter_fridays <- function(dates, include_christmas_friday = TRUE) {
-  easter_fridays <- tibble(holiday_date = dates) |>
+  easter_fridays <- dplyr::tibble(holiday_date = dates) |>
     mutate(
       Day_name = lubridate::wday(.data$holiday_date,
                                  label = TRUE,
@@ -171,7 +171,7 @@ sat_to_mon_xmas <- function(data) {
 #' @title add binary variable to the table for Easter
 #' @description adds binary variables for days around easter holidays
 #' @param data table that includes a "date" field
-#' @param date; dates of easter fridays within the dataset
+#' @param easter_fridays dates of easter fridays within the dataset
 #' @import dplyr
 add_easter_binary_variables <- function(data, easter_fridays) {
   data  <- data |>
@@ -240,15 +240,14 @@ add_bh_binary_variables <- function(data, holidays) {
 #' the two following weeks will be identified with additional variables. This
 #' function aims to pick up the Queen's Jubilee weekend
 #' @param data tibble containing a date field
-#' @param date_field unquoted name of the field in data which corresponds to the
-#'   dates
+#' @param holidays date; vector of holiday dates
 #' @importFrom rlang .data
 #' @importFrom lubridate wday month
 #' @import dplyr
 #'
 consecutive_bank_hols <- function(data, holidays) {
   date_range <- data %>%
-    pull(date) %>%
+    pull("date") %>%
     range()
 
   # create vector of dates where date and following date are bank holidays, and
@@ -268,7 +267,7 @@ consecutive_bank_hols <- function(data, holidays) {
       .data$holiday == TRUE,
       lead(.data$holiday == TRUE),
       lubridate::wday(.data$date) != 2) %>%
-    pull(week_ending)
+    pull("week_ending")
 
   data <- data %>%
     mutate(
@@ -329,7 +328,7 @@ weekly_holiday_variables <- function(from_date, to_date, holidays) {
     include_christmas_friday = TRUE)
 
   # generate daily holiday variables
-  holiday_variables <- tibble(
+  holiday_variables <- dplyr::tibble(
     date = all_dates
   ) |>
     # add easter binary variables:
@@ -339,7 +338,7 @@ weekly_holiday_variables <- function(from_date, to_date, holidays) {
     add_easter_binary_variables(
       easter_fridays = easter_fridays
     ) |>
-    mutate(day = lubridate::wday(date)) |>
+    mutate(day = lubridate::wday(.data$date)) |>
     # create bank hol variables that aren't easter or Christmas
     add_bh_binary_variables(
       holidays = holidays
@@ -349,23 +348,23 @@ weekly_holiday_variables <- function(from_date, to_date, holidays) {
     # round up the date field to the following Friday
     mutate(
       week_ending = round_to_friday(
-        dt = date,
+        dt = .data$date,
         direction = "up"
       )
     ) |>
-    group_by(week_ending) |>
+    group_by(.data$week_ending) |>
     summarise(
-      easter_pre = max(ThurpreE, na.rm = TRUE),
-      easter_post_1 = max(TuespostE, na.rm = TRUE),
-      easter_post_2 = max(MonpostE1, na.rm = TRUE),
-      wk_nearest_BH = max(BH_nearest_WD, na.rm = TRUE),
-      wk_next_nearest_BH = max(BH_next_nearest_WD, na.rm = TRUE),
-      wk_sat_to_mon_xmas = max(sat_to_mon_xmas, na.rm = TRUE),
-      wk_post_sat_to_mon_xmas = max(week_after_sat_to_mon_xmas, na.rm = TRUE),
-      wk2_post_sat_to_mon_xmas = max(week2_after_sat_to_mon_xmas, na.rm = TRUE),
-      consecutive_bh = max(consecutive_bh, na.rm = TRUE),
-      wk_after_tue_to_thu_xmas = max(wk_after_tue_to_thu_xmas, na.rm = TRUE),
-      wk2_after_tue_to_thu_xmas = max(wk2_after_tue_to_thu_xmas, na.rm = TRUE),
+      easter_pre = max(.data$ThurpreE, na.rm = TRUE),
+      easter_post_1 = max(.data$TuespostE, na.rm = TRUE),
+      easter_post_2 = max(.data$MonpostE1, na.rm = TRUE),
+      wk_nearest_BH = max(.data$BH_nearest_WD, na.rm = TRUE),
+      wk_next_nearest_BH = max(.data$BH_next_nearest_WD, na.rm = TRUE),
+      wk_sat_to_mon_xmas = max(.data$sat_to_mon_xmas, na.rm = TRUE),
+      wk_post_sat_to_mon_xmas = max(.data$week_after_sat_to_mon_xmas, na.rm = TRUE),
+      wk2_post_sat_to_mon_xmas = max(.data$week2_after_sat_to_mon_xmas, na.rm = TRUE),
+      consecutive_bh = max(.data$consecutive_bh, na.rm = TRUE),
+      wk_after_tue_to_thu_xmas = max(.data$wk_after_tue_to_thu_xmas, na.rm = TRUE),
+      wk2_after_tue_to_thu_xmas = max(.data$wk2_after_tue_to_thu_xmas, na.rm = TRUE),
       .groups = "drop"
     )
 
@@ -374,7 +373,7 @@ weekly_holiday_variables <- function(from_date, to_date, holidays) {
 
 #' creates a weekly table mean number of days in that week since 31st Dec 2016
 #' @param from_date date; first date in time period
-#' @param end_date date; last date in time period
+#' @param to_date date; last date in time period
 #' @import dplyr
 #' @export
 weekly_trend_variable <- function(from_date, to_date) {
@@ -393,25 +392,25 @@ weekly_trend_variable <- function(from_date, to_date) {
     by = "days"
   )
 
-  trend <- tibble(
+  trend <- dplyr::tibble(
     date = all_dates,
-    years_from_20161231 = as.numeric(date - as.Date("2016-12-31")) / 365.25) %>%
+    years_from_20161231 = as.numeric(.data$date - as.Date("2016-12-31")) / 365.25) %>%
     mutate(
       week_ending = round_to_friday(
-        dt = date,
+        dt = .data$date,
         direction = "up"
       )
     ) |>
-    group_by(week_ending) |>
+    group_by(.data$week_ending) |>
     summarise(
-      years_from_20161231 = mean(years_from_20161231)
+      years_from_20161231 = mean(.data$years_from_20161231)
     )
   return(trend)
 }
 
 #' creates table of month variables (ie, seasonal) aggregated to week
 #' @param from_date date; first date in time period
-#' @param end_date date; last date in time period
+#' @param to_date date; last date in time period
 #' @import dplyr
 #' @importFrom tidyr pivot_wider
 #' @export
@@ -430,22 +429,22 @@ weekly_seasonal_variables <- function(from_date, to_date) {
     by = "days"
   )
 
-  seasonal <- tibble(date = all_dates) |>
+  seasonal <- dplyr::tibble(date = all_dates) |>
     add_day_weighting() |>
     tidyr::pivot_wider(
-      names_from = month,
+      names_from = "month",
       names_prefix = "month",
-      values_from = month_val,
+      values_from = "month_val",
       values_fill = list(month_val = 0)
     ) |>
     mutate(
       date = round_to_friday(
-        dt = date,
+        dt = .data$date,
         direction = "up"
       )
     ) |>
-    rename(week_ending = date) |>
-    group_by(week_ending) |>
+    rename(week_ending = "date") |>
+    group_by(.data$week_ending) |>
     summarise(
       across(starts_with("month"),
              mean),
@@ -533,9 +532,10 @@ build_prediction_dates <- function(
   to_date <- round_to_friday(to_date,
                              direction = "down")
 
-  daily_dates <- tibble(date = seq(from = from_date,
-                                   to = to_date,
-                                   by = 'days'))
+  daily_dates <- dplyr::tibble
+  (date = seq(from = from_date,
+              to = to_date,
+              by = 'days'))
 
   weekly_dates <- seq(from = weekly_from_date,
                       to = to_date,
@@ -555,7 +555,7 @@ build_prediction_dates <- function(
     age_group = age_group,
     deprivation_quintile = deprivation_quintile
   ) |>
-    tibble()
+    dplyr::tibble()
 
   # # create denominator variable
   # # aggregate denominator data to weekly
@@ -618,13 +618,13 @@ build_prediction_dates <- function(
 #'   value
 #' @param n number of simulated values
 #' @param mu expected value
-#' @param dispersion_parameter dispersion parameter from model
+#' @param dispersion_parameter dispersion parameter for the model
 #' @param var variance
 #' @importFrom stats rnbinom
 #' @export
-rqpois <- function(n, mu, dispersion.parameter = NULL, var = NULL) {
-  if (!is.null(dispersion.parameter)) {
-    theta <- dispersion.parameter
+rqpois <- function(n, mu, dispersion_parameter = NULL, var = NULL) {
+  if (!is.null(dispersion_parameter)) {
+    theta <- dispersion_parameter
   } else if (!is.null(var)) {
     theta <- var/mu
   } else {
@@ -639,8 +639,6 @@ rqpois <- function(n, mu, dispersion.parameter = NULL, var = NULL) {
 #'
 #' @description add lower and upper prediction interval fields to data frame
 #' @param data data frame containing data
-#' @param modelled_field unquoted field name of field in data containing the
-#'   expected values
 #' @importFrom stats quantile
 #' @importFrom purrr map map_dbl
 #' @importFrom dplyr select mutate

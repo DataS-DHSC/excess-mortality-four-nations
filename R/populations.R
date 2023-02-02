@@ -11,9 +11,6 @@
 #' @import dplyr
 #' @import lubridate
 #'
-#' @examples
-#' df <- create_dummy_populations() |>
-#'  convert_annual_to_monthly_populations()
 convert_annual_to_monthly_populations <- function(denominators,
                                                   start_year,
                                                   end_year) {
@@ -28,7 +25,7 @@ convert_annual_to_monthly_populations <- function(denominators,
   denominator_groups <- denominators |>
     distinct(across(all_of(c(join_variables, "period")))) |>
     left_join(
-      y = tibble(
+      y = dplyr::tibble(
         month = seq(from = 1L,
                     to = 12L)
       ),
@@ -120,7 +117,7 @@ weekly_denominators <- function(denominators, from_date, to_date,
     by = "days"
   )
 
-  weekly_denominators <- tibble(
+  weekly_denominators <- dplyr::tibble(
     date = all_dates,
     month = floor_date(date,
                        unit = "month")

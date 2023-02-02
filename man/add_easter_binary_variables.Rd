@@ -9,7 +9,7 @@ add_easter_binary_variables(data, easter_fridays)
 \arguments{
 \item{data}{table that includes a "date" field}
 
-\item{date;}{dates of easter fridays within the dataset}
+\item{easter_fridays}{dates of easter fridays within the dataset}
 }
 \description{
 adds binary variables for days around easter holidays

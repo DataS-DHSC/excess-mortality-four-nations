@@ -4,16 +4,16 @@
 \alias{rqpois}
 \title{simulate distribution around the modelled value}
 \usage{
-rqpois(n, mu, dispersion.parameter = NULL, var = NULL)
+rqpois(n, mu, dispersion_parameter = NULL, var = NULL)
 }
 \arguments{
 \item{n}{number of simulated values}
 
 \item{mu}{expected value}
 
-\item{var}{variance}
+\item{dispersion_parameter}{dispersion parameter for the model}
 
-\item{dispersion_parameter}{dispersion parameter from model}
+\item{var}{variance}
 }
 \description{
 creates distribution of expected values around the modelled
