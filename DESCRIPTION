@@ -1,9 +1,8 @@
 Package: excessmortality
 Type: Package
-Title: Calculates excess mortality for the pandemic period
-Version: 0.1.0.9000
+Title: Supports calculation of excess mortality for the pandemic period
+Version: 0.1.1
 Authors@R: c(person("Fox", "Sebastian", , "sebastian.fox@dhsc.gov.uk", c("aut", "cre")))
-Maintainer: The package maintainer <yourself@somewhere.net>
 Description: Using inputs of registered deaths by week, the number of expected 
     registered deaths each week can be modelled using this package.
 Imports:

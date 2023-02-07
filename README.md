@@ -10,7 +10,11 @@
 coverage](https://codecov.io/gh/DataS-DHSC/excess-mortality-four-nations/branch/master/graph/badge.svg)](https://app.codecov.io/gh/DataS-DHSC/excess-mortality-four-nations?branch=master)
 <!-- badges: end -->
 
-The goal of excessmortality is to …
+The goal of excessmortality is to make it simpler for users to estimate
+expected deaths each week in a similar way to how the Office for Health
+Improvement and Disparities has done in their monthly publication of
+[Excess Mortality in England and English
+Regions](https://www.gov.uk/government/statistics/excess-mortality-in-england-and-english-regions).
 
 ## Installation
 
@@ -33,57 +37,41 @@ using functions from this package along with your own data:
 library(excessmortality)
 library(dplyr)
 
-# function that scrapes bank holidays from the internet for northern ireland
-bank_holidays <- function(yr) {
-  
-  # function that applies the first row as the field names
-  row_one_to_column_name <- function(data) {
-    col_names <- data[1, ] |> 
-      as.character()
-    
-    data <- data |> 
-      slice(-1)
-    
-    names(data) <- col_names
-    
-    return(data)
-  }
-  
-  url <- sprintf("https://uk-public-holidays.com/northern-ireland-public-holidays-%s/",
-                 yr)
-  
-  date_table <- rvest::read_html(url) %>%
-    rvest::html_elements("#zebra") %>%
-    rvest::html_table(header = FALSE)
-  
-  date_table <- date_table[[1]]
-  
-  header_row <- match("Date", date_table[[1]])
-  
-  date <- date_table %>% 
-    slice(header_row:nrow(.)) |> 
-    row_one_to_column_name() |> 
-    mutate(
-      dy = stringr::str_extract(Date, "[0-9]+"),
-      mnth = stringr::str_extract(Date, "[[:alpha:]]+"),
-      yr = yr,
-      bh = 
-        paste(dy, mnth, yr,
-              sep = "-"),
-      bh_date = as.Date(
-        bh,
-        format = "%d-%B-%Y"
-      )) |> 
-    pull(bh_date)
-  
-  return(date)
-}
 
-holidays <- 2014:2023 |> 
-  lapply(bank_holidays) |> 
-  purrr::reduce(
-    .f = c
+holidays <- as.Date(
+  c(
+    "2014-01-01",
+    "2014-12-25",
+    "2014-12-26",
+    "2015-01-01",
+    "2015-12-25",
+    "2015-12-26",
+    "2016-01-01",
+    "2016-12-25",
+    "2016-12-26",
+    "2017-01-01",
+    "2017-12-25",
+    "2017-12-26",
+    "2018-01-01",
+    "2018-12-25",
+    "2018-12-26",
+    "2019-01-01",
+    "2019-12-25",
+    "2019-12-26",
+    "2020-01-01",
+    "2020-12-25",
+    "2020-12-26",
+    "2021-01-01",
+    "2021-12-25",
+    "2021-12-26",
+    "2022-01-01",
+    "2022-12-25",
+    "2022-12-26",
+    "2023-01-01",
+    "2023-12-25",
+    "2023-12-26"
   )
+)
 
 # Populations
 pops <- create_dummy_populations()
@@ -95,6 +83,8 @@ baseline_weekly_pops <- convert_annual_to_weekly_populations(
   to_date = as.Date("2019-12-27"),
   holidays = holidays
 )
+#> Warning in check_holiday_dates(holidays): The number of holiday dates provided
+#> are unusually low or high
 
 # Registered deaths
 # Note, in true datasets there may be weeks where there are 0 deaths registered for specific age groups, sex, deprivation quintile combinations (eg, incomplete = TRUE in the function below)
@@ -129,7 +119,7 @@ baseline_complete_deaths <- baseline_complete_deaths |>
   mutate(
     across(
       c(areacode, sex, age_group, deprivation_quintile),
-      .fns = factor,
+      .fns = factor
     ),
     week_ending = as.Date(week_ending)
   )
@@ -152,6 +142,20 @@ to_date <- as.Date("2019-12-27")
     to_date = to_date,
     holidays = holidays
   )
+#> Warning in check_holiday_dates(holidays): The number of holiday dates provided
+#> are unusually low or high
+
+#> Warning in check_holiday_dates(holidays): The number of holiday dates provided
+#> are unusually low or high
+
+#> Warning in check_holiday_dates(holidays): The number of holiday dates provided
+#> are unusually low or high
+
+#> Warning in check_holiday_dates(holidays): The number of holiday dates provided
+#> are unusually low or high
+
+#> Warning in check_holiday_dates(holidays): The number of holiday dates provided
+#> are unusually low or high
 
 # Add on predictor variables
 baseline_data <- baseline_data |> 
@@ -165,6 +169,9 @@ baseline_data <- baseline_data |>
 model <- glm("registered_deaths ~ offset(log(denominator)) +
                            sex:age_group +                 
                            areacode +
+                           deprivation_quintile:age_group +
+                           years_from_20161231:deprivation_quintile +
+                           years_from_20161231:age_group +
                            years_from_20161231 +
                            month1:age_group + month2:age_group + 
                            month3:age_group + month4:age_group +
@@ -192,6 +199,8 @@ expected_weekly_pops <- convert_annual_to_weekly_populations(
   to_date = as.Date("2023-12-29"),
   holidays = holidays
 )
+#> Warning in check_holiday_dates(holidays): The number of holiday dates provided
+#> are unusually low or high
 
 # build table of data to predict from
 predictors <- build_prediction_dates(
@@ -200,6 +209,20 @@ predictors <- build_prediction_dates(
   holidays = holidays,
   denominators = expected_weekly_pops
 )
+#> Warning in check_holiday_dates(holidays): The number of holiday dates provided
+#> are unusually low or high
+
+#> Warning in check_holiday_dates(holidays): The number of holiday dates provided
+#> are unusually low or high
+
+#> Warning in check_holiday_dates(holidays): The number of holiday dates provided
+#> are unusually low or high
+
+#> Warning in check_holiday_dates(holidays): The number of holiday dates provided
+#> are unusually low or high
+
+#> Warning in check_holiday_dates(holidays): The number of holiday dates provided
+#> are unusually low or high
 
 # apply model to the table of data
 predictions <- predict(
