@@ -37,7 +37,7 @@ This is an example which shows you how to calculate excess mortality using funct
 
 ### Build the data for modelling
 
-```{r baseline-data, message=FALSE}
+```{r baseline-data, message=FALSE, warning=FALSE}
 library(excessmortality)
 library(dplyr)
 
@@ -183,7 +183,7 @@ dispersion_parameter <- summary(model)$dispersion
 
 ### Create expected deaths
 
-```{r expected-deaths}
+```{r expected-deaths, warning=FALSE}
 # obtain weekly populations for the prediction time period
 expected_weekly_pops <- convert_annual_to_weekly_populations(
   pops,
@@ -206,12 +206,20 @@ predictions <- predict(
   newdata = predictors, 
   type = "response")
   
-# reduce table down to component parts and add prediction intervals
+# reduce table down to component parts 
 expected_deaths <- predictors |> 
   mutate(expected_deaths = predictions) |> 
   select(
     week_ending, areacode, sex, age_group, deprivation_quintile, expected_deaths
-  ) |> 
+  )
+
+# aggregate and add prediction intervals
+
+expected_deaths_by_age <- expected_deaths |> 
+  group_by(week_ending, areacode, age_group) |> 
+  summarise(expected_deaths = sum(expected_deaths,
+                                  na.rm = TRUE),
+            .groups = "drop") |> 
   add_prediction_intervals(dispersion_parameter)
 ```
 

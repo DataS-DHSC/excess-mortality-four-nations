@@ -83,8 +83,6 @@ baseline_weekly_pops <- convert_annual_to_weekly_populations(
   to_date = as.Date("2019-12-27"),
   holidays = holidays
 )
-#> Warning in check_holiday_dates(holidays): The number of holiday dates provided
-#> are unusually low or high
 
 # Registered deaths
 # Note, in true datasets there may be weeks where there are 0 deaths registered for specific age groups, sex, deprivation quintile combinations (eg, incomplete = TRUE in the function below)
@@ -142,20 +140,6 @@ to_date <- as.Date("2019-12-27")
     to_date = to_date,
     holidays = holidays
   )
-#> Warning in check_holiday_dates(holidays): The number of holiday dates provided
-#> are unusually low or high
-
-#> Warning in check_holiday_dates(holidays): The number of holiday dates provided
-#> are unusually low or high
-
-#> Warning in check_holiday_dates(holidays): The number of holiday dates provided
-#> are unusually low or high
-
-#> Warning in check_holiday_dates(holidays): The number of holiday dates provided
-#> are unusually low or high
-
-#> Warning in check_holiday_dates(holidays): The number of holiday dates provided
-#> are unusually low or high
 
 # Add on predictor variables
 baseline_data <- baseline_data |> 
@@ -199,8 +183,6 @@ expected_weekly_pops <- convert_annual_to_weekly_populations(
   to_date = as.Date("2023-12-29"),
   holidays = holidays
 )
-#> Warning in check_holiday_dates(holidays): The number of holiday dates provided
-#> are unusually low or high
 
 # build table of data to predict from
 predictors <- build_prediction_dates(
@@ -209,34 +191,26 @@ predictors <- build_prediction_dates(
   holidays = holidays,
   denominators = expected_weekly_pops
 )
-#> Warning in check_holiday_dates(holidays): The number of holiday dates provided
-#> are unusually low or high
-
-#> Warning in check_holiday_dates(holidays): The number of holiday dates provided
-#> are unusually low or high
-
-#> Warning in check_holiday_dates(holidays): The number of holiday dates provided
-#> are unusually low or high
-
-#> Warning in check_holiday_dates(holidays): The number of holiday dates provided
-#> are unusually low or high
-
-#> Warning in check_holiday_dates(holidays): The number of holiday dates provided
-#> are unusually low or high
 
 # apply model to the table of data
 predictions <- predict(
   model, 
   newdata = predictors, 
   type = "response")
-#> Warning in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == :
-#> prediction from a rank-deficient fit may be misleading
   
-# reduce table down to component parts and add prediction intervals
+# reduce table down to component parts 
 expected_deaths <- predictors |> 
   mutate(expected_deaths = predictions) |> 
   select(
     week_ending, areacode, sex, age_group, deprivation_quintile, expected_deaths
-  ) |> 
+  )
+
+# aggregate and add prediction intervals
+
+expected_deaths_by_age <- expected_deaths |> 
+  group_by(week_ending, areacode, age_group) |> 
+  summarise(expected_deaths = sum(expected_deaths,
+                                  na.rm = TRUE),
+            .groups = "drop") |> 
   add_prediction_intervals(dispersion_parameter)
 ```
